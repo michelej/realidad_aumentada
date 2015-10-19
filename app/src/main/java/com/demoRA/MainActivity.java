@@ -67,7 +67,6 @@ public class MainActivity extends AndroidHarness implements ApplicationControl{
         exitDialogMessage = "Press Yes";
 
         splashPicID = R.drawable.splashscreen;
-        //screenOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE; // Choose screen orientation
 
         mouseEventsInvertX = true; // Invert the MouseEvents X
         mouseEventsInvertY = true; // Invert the MouseEvents Y

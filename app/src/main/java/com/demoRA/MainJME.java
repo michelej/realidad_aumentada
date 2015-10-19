@@ -31,7 +31,7 @@ public class MainJME extends SimpleApplication {
     private static final String LOGTAG = "MainJME";
 
     private Geometry mVideoBGGeom;
-    private Material mvideoBGMat;
+    private Material mVideoBGMat;
     private Texture2D mCameraTexture;
     private Image mCameraImage;
 
@@ -44,7 +44,7 @@ public class MainJME extends SimpleApplication {
     boolean mNewCameraFrameAvailable = false;
     boolean mIsActive=false;
 
-    private float mForegroundCamFOVY = 90; // for a Samsung Galaxy SII
+    private float mForegroundCamFOVY = 90;
 
     private MainActivity activity;
 
@@ -66,7 +66,7 @@ public class MainJME extends SimpleApplication {
 
             if (mNewCameraFrameAvailable) {
                 mCameraTexture.setImage(mCameraImage);
-                mvideoBGMat.setTexture("ColorMap", mCameraTexture);
+                mVideoBGMat.setTexture("ColorMap", mCameraTexture);
             }
         }
         mVideoBGGeom.updateLogicalState(tpf);
@@ -86,26 +86,22 @@ public class MainJME extends SimpleApplication {
         return activity;
     }
 
-    // This function creates the geometry, the viewport and the virtual camera
-    // needed for rendering the incoming Android camera frames in the scene
-    // graph
+    /**
+     * Funcion para inciar todo lo relacionado con mostrar los frames que
+     * se reciben de la camara en el SceneGraph.
+     *
+     * @param screenWidth Ancho del Screen
+     * @param screenHeight Largo del Screen
+     */
+
     public void initVideoBackground(int screenWidth, int screenHeight) {
-        // Create a Quad shape.
         Quad videoBGQuad = new Quad(1, 1, true);
-        // Create a Geometry with the Quad shape
         mVideoBGGeom = new Geometry("quad", videoBGQuad);
         float newWidth = 1.f * screenWidth / screenHeight;
-        // Center the Geometry in the middle of the screen.
-        mVideoBGGeom.setLocalTranslation(-0.5f * newWidth, -0.5f, 0.f);//
-        // Scale (stretch) the width of the Geometry to cover the whole screen
-        // width.
+        mVideoBGGeom.setLocalTranslation(-0.5f * newWidth, -0.5f, 0.f);
         mVideoBGGeom.setLocalScale(1.f * newWidth, 1.f, 1);
-        // Apply a unshaded material which we will use for texturing.
-        mvideoBGMat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
-        mVideoBGGeom.setMaterial(mvideoBGMat);
-
-        // Create a new texture which will hold the Android camera preview frame
-        // pixels.
+        mVideoBGMat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
+        mVideoBGGeom.setMaterial(mVideoBGMat);
         mCameraTexture = new Texture2D();
         mSceneInitialized = true;
     }
@@ -126,7 +122,6 @@ public class MainJME extends SimpleApplication {
 
         //videoBGVP.setClearFlags(true, false, false);
         //videoBGVP.setBackgroundColor(new ColorRGBA(1,0,0,1));
-
     }
 
     public void setVideoBGTexture(final ByteBuffer image, int width, int height) {
@@ -138,20 +133,10 @@ public class MainJME extends SimpleApplication {
         mNewCameraFrameAvailable = true;
     }
 
+    /**
+     *  Iniciar la escena que se sobre pone a la camara
+     */
     public void initForegroundScene() {
-
-        //use the box for debugging
-
-        /*Box b = new Box(10, 10, 10); // create cube shape at the origin
-        Geometry geom = new Geometry("Box", b);  // create cube geometry from the shape
-        Material mat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");  // create a simple material
-        mat.setColor("Color", ColorRGBA.Blue);   // set color of material to blue
-        geom.setMaterial(mat);                   // set the cube's material
-        rootNode.attachChild(geom);              // make the cube appear in the scene
-
-        geom.setLocalTranslation(new Vector3f(0.0f, 0.0f, 0.0f));*/
-
-
         Spatial teapot = assetManager.loadModel("Models/logo/unetLogo.mesh.j3o");
         teapot.scale(50f, 50f, 50f);
         Material cube1Mat = new Material(assetManager,"Common/MatDefs/Misc/Unshaded.j3md");
@@ -172,43 +157,12 @@ public class MainJME extends SimpleApplication {
         teapot.rotate(YAW180);
 
         rootNode.attachChild(teapot);
-
-        /*Spatial liberty = assetManager.loadModel("Models/Liberty.mesh.j3o");
-        liberty.setLocalTranslation(new Vector3f(0.0f, 0.0f, 0.0f));
-        rootNode.attachChild(liberty);*/
-
-        /*DirectionalLight sun = new DirectionalLight();
-        sun.setDirection(new Vector3f(-0.1f, -0.7f, -1.0f).normalizeLocal());
-        rootNode.addLight(sun);*/
-
-        // Load a model from test_data (OgreXML + material + texture)
-        /*Spatial ninja = assetManager.loadModel("Models/Ninja/Ninja.mesh.xml");
-        ninja.scale(0.125f, 0.125f, 0.125f);
-        Quaternion rotateNinjaX=new Quaternion();
-        rotateNinjaX.fromAngleAxis(3.14f/2.0f,new Vector3f(1.0f,0.0f,0.0f));
-        Quaternion rotateNinjaZ=new Quaternion();
-        rotateNinjaZ.fromAngleAxis(3.14f,new Vector3f(0.0f,0.0f,1.0f));
-
-        // rotateNinjaX.mult(rotateNinjaZ);
-        Quaternion rotateNinjaXZ=rotateNinjaZ.mult(rotateNinjaX);
-
-        ninja.rotate(rotateNinjaXZ);
-
-        //3.14/2.,new Vector3f(1.0.,0.0,1.0)));
-        // ninja.rotate(0.0f, -3.0f, 0.0f);
-        ninja.setLocalTranslation(0.0f, 0.0f, 0.0f);
-        rootNode.attachChild(ninja);
-
-        // You must add a light to make the model visible
-        DirectionalLight back = new DirectionalLight();
-        back.setDirection(new Vector3f(0.f,-1.f,1.0f));
-        rootNode.addLight(back);
-
-        DirectionalLight front = new DirectionalLight();
-        front.setDirection(new Vector3f(0.f,1.f,1.0f));
-        rootNode.addLight(front);*/
     }
 
+    /**
+     *
+     * @param fovY
+     */
     public void initForegroundCamera(float fovY) {
         fgCam = new Camera(settings.getWidth(), settings.getHeight());
 
@@ -222,7 +176,6 @@ public class MainJME extends SimpleApplication {
         //color,depth,stencil
         fgVP.setClearFlags(false, true, false);
         fgVP.setBackgroundColor(new ColorRGBA(0, 0, 0, 1));
-//		fgVP.setBackgroundColor(new ColorRGBA(0,0,0,0));
     }
 
     public void setCameraPerspective(float fovY, float aspectRatio) {
