@@ -1,7 +1,7 @@
 package com.demoRA;
 
-import android.content.pm.ActivityInfo;
 
+import android.util.Log;
 import com.jme3.app.SimpleApplication;
 import com.jme3.asset.TextureKey;
 import com.jme3.light.DirectionalLight;
@@ -14,12 +14,21 @@ import com.jme3.renderer.Camera;
 import com.jme3.renderer.RenderManager;
 import com.jme3.renderer.ViewPort;
 import com.jme3.scene.Geometry;
+import com.jme3.scene.Node;
 import com.jme3.scene.Spatial;
+import com.jme3.scene.debug.Arrow;
 import com.jme3.scene.shape.Box;
 import com.jme3.scene.shape.Quad;
+import com.jme3.system.AppSettings;
 import com.jme3.texture.Image;
 import com.jme3.texture.Texture;
 import com.jme3.texture.Texture2D;
+import com.jme3.texture.image.ColorSpace;
+import com.qualcomm.vuforia.CameraCalibration;
+import com.qualcomm.vuforia.CameraDevice;
+import com.qualcomm.vuforia.Renderer;
+import com.qualcomm.vuforia.Vec2F;
+import com.qualcomm.vuforia.VideoBackgroundConfig;
 
 import java.nio.ByteBuffer;
 
@@ -28,35 +37,40 @@ import java.nio.ByteBuffer;
  */
 public class MainJME extends SimpleApplication {
 
-    private static final String LOGTAG = "MainJME";
+    private static final String LOGTAG = "demoRA_LOG";
 
     private Geometry mVideoBGGeom;
     private Material mVideoBGMat;
     private Texture2D mCameraTexture;
     private Image mCameraImage;
 
+    private Node objNode;
+
     Camera videoBGCam;
     Camera fgCam;
 
     private boolean mSceneInitialized = false;
-    private boolean mVideoImageInitialized = false;
+    //private boolean mVideoImageInitialized = false;
 
     boolean mNewCameraFrameAvailable = false;
     boolean mIsActive=false;
 
-    private float mForegroundCamFOVY = 90;
+    //private float mForegroundCamFOVY = 90;
 
     private MainActivity activity;
+
+    public boolean started=false;
 
     @Override
     public void simpleInitApp() {
         viewPort.detachScene(rootNode);
 
+        objNode=new Node("Object Node");
+        rootNode.attachChild(objNode);
+
         initVideoBackground(settings.getWidth(), settings.getHeight());
         initBackgroundCamera();
-
         initForegroundScene();
-        initForegroundCamera(mForegroundCamFOVY);
     }
 
     @Override
@@ -78,6 +92,13 @@ public class MainJME extends SimpleApplication {
 
     }
 
+    public void startUp(){
+        if(!started){
+            started=true;
+            initForegroundCamera();
+        }
+    }
+
     public void setActivity(MainActivity activity) {
         this.activity = activity;
     }
@@ -87,7 +108,7 @@ public class MainJME extends SimpleApplication {
     }
 
     /**
-     * Funcion para inciar todo lo relacionado con mostrar los frames que
+     * Funcion para inciartodo lo relacionado con mostrar los frames que
      * se reciben de la camara en el SceneGraph.
      *
      * @param screenWidth Ancho del Screen
@@ -116,12 +137,8 @@ public class MainJME extends SimpleApplication {
 
         // Also create a custom viewport.
         ViewPort videoBGVP = renderManager.createMainView("VideoBGView", videoBGCam);
-        // Attach the geometry representing the video background to the
-        // viewport.
+        // Attach the geometry representing the video background to the viewport.
         videoBGVP.attachScene(mVideoBGGeom);
-
-        //videoBGVP.setClearFlags(true, false, false);
-        //videoBGVP.setBackgroundColor(new ColorRGBA(1,0,0,1));
     }
 
     public void setVideoBGTexture(final ByteBuffer image, int width, int height) {
@@ -129,7 +146,7 @@ public class MainJME extends SimpleApplication {
             return;
         }
 
-        mCameraImage = new Image(Image.Format.RGB565, width, height, image);
+        mCameraImage = new Image(Image.Format.RGB565, width, height, image, ColorSpace.sRGB);
         mNewCameraFrameAvailable = true;
     }
 
@@ -137,12 +154,12 @@ public class MainJME extends SimpleApplication {
      *  Iniciar la escena que se sobre pone a la camara
      */
     public void initForegroundScene() {
-        Spatial teapot = assetManager.loadModel("Models/logo/unetLogo.mesh.j3o");
-        teapot.scale(50f, 50f, 50f);
+        /*Spatial logo = assetManager.loadModel("Models/logo/unetLogo.mesh.j3o");
+        logo.scale(100f, 100f, 100f);
         Material cube1Mat = new Material(assetManager,"Common/MatDefs/Misc/Unshaded.j3md");
         Texture cube1Tex = assetManager.loadTexture(new TextureKey("Models/logo/unetlogoCompleteMap.tga", false));
         cube1Mat.setTexture("ColorMap", cube1Tex);
-        teapot.setMaterial(cube1Mat);
+        logo.setMaterial(cube1Mat);
 
         Quaternion rotateNinjaX=new Quaternion();
         rotateNinjaX.fromAngleAxis(3.14f/2.0f,new Vector3f(1.0f,0.0f,0.0f));
@@ -150,41 +167,89 @@ public class MainJME extends SimpleApplication {
         rotateNinjaZ.fromAngleAxis(3.14f,new Vector3f(0.0f,0.0f,1.0f));
         Quaternion rotateNinjaXZ=rotateNinjaZ.mult(rotateNinjaX);
 
-        teapot.rotate(rotateNinjaXZ);
-        teapot.setLocalTranslation(0.0f, 0.0f, 0.0f);
+        logo.rotate(rotateNinjaXZ);
+        logo.setLocalTranslation(0.0f, 0.0f, 0.0f);
 
         Quaternion YAW180   = new Quaternion().fromAngleAxis(FastMath.PI  ,   new Vector3f(0,1,0));
-        teapot.rotate(YAW180);
+        logo.rotate(YAW180);
 
-        rootNode.attachChild(teapot);
+        objNode.attachChild(logo);*/
+
+        objNode.attachChild(createAxisMarker(300));
+    }
+
+    /**
+     *
+     *
+     */
+    public void initForegroundCamera() {
+        fgCam = new Camera(settings.getWidth(), settings.getHeight());
+        fgCam.setLocation(new Vector3f(0f, 0f, 0f));
+
+        CameraCalibration cameraCalibration = CameraDevice.getInstance().getCameraCalibration();
+        VideoBackgroundConfig config = Renderer.getInstance().getVideoBackgroundConfig();
+
+        float viewportWidth = config.getSize().getData()[0];
+        float viewportHeight = config.getSize().getData()[1];
+
+        float cameraWidth = cameraCalibration.getSize().getData()[0];
+        float cameraHeight = cameraCalibration.getSize().getData()[1];
+
+        float screenWidth = settings.getWidth();
+        float screenHeight = settings.getHeight();
+
+        Vec2F size = new Vec2F(cameraWidth, cameraHeight);
+        Vec2F focalLength = cameraCalibration.getFocalLength();
+
+        float fovRadians = 2 * (float) Math.atan(0.5f * (size.getData()[1] / focalLength.getData()[1]));
+        float fovDegrees = fovRadians * 180.0f / (float) Math.PI;
+        float aspectRatio = (size.getData()[0] / size.getData()[1]);
+
+        // Adjust for screen / camera size distortion
+        float viewportDistort = 1.0f;
+
+        if (viewportWidth != screenWidth){
+            viewportDistort = viewportWidth / screenWidth;
+            fovDegrees = fovDegrees * viewportDistort;
+            aspectRatio = aspectRatio / viewportDistort;
+        }
+
+        if (viewportHeight != screenHeight){
+            viewportDistort = viewportHeight / screenHeight;
+            fovDegrees = fovDegrees / viewportDistort;
+            aspectRatio = aspectRatio * viewportDistort;
+        }
+
+        setCameraPerspective(fovDegrees, aspectRatio);
+        setCameraViewport(viewportWidth, viewportHeight, cameraWidth, cameraHeight);
+
+        ViewPort fgVP = renderManager.createMainView("ForegroundView", fgCam);
+        fgVP.attachScene(rootNode);
+        fgVP.setClearFlags(false, true, false);
+        fgVP.setBackgroundColor(new ColorRGBA(0, 0, 0, 1));
     }
 
     /**
      *
      * @param fovY
+     * @param aspectRatio
      */
-    public void initForegroundCamera(float fovY) {
-        fgCam = new Camera(settings.getWidth(), settings.getHeight());
-
-        fgCam.setViewPort(0, 1.0f, 0.f, 1.0f);
-        fgCam.setLocation(new Vector3f(0f, 0f, 0f));
-        fgCam.setAxes(new Vector3f(-1f, 0f, 0f), new Vector3f(0f, 1f, 0f), new Vector3f(0f, 0f, -1f));
-        fgCam.setFrustumPerspective(fovY, settings.getWidth() / settings.getHeight(), 1, 1000);
-
-        ViewPort fgVP = renderManager.createMainView("ForegroundView", fgCam);
-        fgVP.attachScene(rootNode);
-        //color,depth,stencil
-        fgVP.setClearFlags(false, true, false);
-        fgVP.setBackgroundColor(new ColorRGBA(0, 0, 0, 1));
-    }
-
     public void setCameraPerspective(float fovY, float aspectRatio) {
-        //Log.d(LOGTAG, "setCameraPerspective: fovY= "+ fovY + " - aspectRatio= " + aspectRatio);
-        fgCam.setFrustumPerspective(fovY, aspectRatio, 1.f, 100.f);
+        Log.d(LOGTAG, "setCameraPerspective: fovY= "+ fovY + " - aspectRatio= " + aspectRatio);
+        fgCam.setFrustumPerspective(fovY, aspectRatio, 1.f, 5000.f);
+        fgCam.update();
+
     }
 
+    /**
+     *
+     * @param viewport_w
+     * @param viewport_h
+     * @param size_x
+     * @param size_y
+     */
     public void setCameraViewport(float viewport_w, float viewport_h, float size_x, float size_y) {
-        //Log.d(LOGTAG, "setCameraViewport: viewport_w= "+ viewport_w + " - viewport_h= " + viewport_h);
+        Log.d(LOGTAG, "setCameraViewport: viewport_w= "+ viewport_w + " - viewport_h= " + viewport_h);
         float newWidth = 1.f;
         float newHeight = 1.f;
 
@@ -194,8 +259,6 @@ public class MainJME extends SimpleApplication {
             videoBGCam.resize((int) viewport_w, (int) viewport_h, true);
             videoBGCam.setParallelProjection(true);
         }
-        //exercise: find the similar transformation
-        //when viewport_w != settings.getWidth
 
         //Adjusting viewport: from BackgroundTextureAccess example in Qualcomm Vuforia
         float viewportPosition_x = (((int) (settings.getWidth() - viewport_w)) / (int) 2);//+0
@@ -215,17 +278,79 @@ public class MainJME extends SimpleApplication {
         mVideoBGGeom.setLocalScale(newWidth, newHeight, 1.f);
     }
 
+    /**
+     * Funcion para poner la posicion de la camara en relacion al objeto rastreado
+     * @param cam_x
+     * @param cam_y
+     * @param cam_z
+     */
     public void setCameraPose(float cam_x, float cam_y, float cam_z) {
         fgCam.setLocation(new Vector3f(cam_x, cam_y, cam_z));
+        fgCam.update();
     }
 
+    /**
+     * Funcion para poner la direccion en la que esta viendo la camara en relacion al objeto rastreado
+     * @param cam_right_x
+     * @param cam_right_y
+     * @param cam_right_z
+     * @param cam_up_x
+     * @param cam_up_y
+     * @param cam_up_z
+     * @param cam_dir_x
+     * @param cam_dir_y
+     * @param cam_dir_z
+     */
     public void setCameraOrientation(float cam_right_x, float cam_right_y, float cam_right_z, float cam_up_x, float cam_up_y, float cam_up_z, float cam_dir_x, float cam_dir_y, float cam_dir_z) {
         //left,up,direction
         fgCam.setAxes(new Vector3f(-cam_right_x, -cam_right_y, -cam_right_z), new Vector3f(-cam_up_x, -cam_up_y, -cam_up_z), new Vector3f(cam_dir_x, cam_dir_y, cam_dir_z));
+        fgCam.update();
     }
 
-    public void lookAway() {
-        fgCam.setLocation(new Vector3f(0, 100f, 0));
-        fgCam.lookAt(new Vector3f(0f, 500f, 0f), Vector3f.UNIT_Y);
+    /**
+     *  Ocultar los objetos cuando no se esta rastreando nada.
+     */
+    public void hideObjects() {
+        objNode.setCullHint(Spatial.CullHint.Always);
+    }
+
+    /**
+     *  Mostrar los objetos cuando se rastrea algo.
+     */
+    public void showObjects(){
+        objNode.setCullHint(Spatial.CullHint.Dynamic);
+    }
+
+    /**
+     *  Funcion Debug para crear un Axis X,Y,Y
+     * @param arrowSize
+     * @return
+     */
+    protected Node createAxisMarker(float arrowSize) {
+        Material redMat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
+        redMat.getAdditionalRenderState().setWireframe(true);
+        redMat.setColor("Color", ColorRGBA.Red);
+
+        Material greenMat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
+        greenMat.getAdditionalRenderState().setWireframe(true);
+        greenMat.setColor("Color", ColorRGBA.Green);
+
+        Material blueMat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
+        blueMat.getAdditionalRenderState().setWireframe(true);
+        blueMat.setColor("Color", ColorRGBA.Blue);
+
+        Node axis = new Node();
+
+        // create arrows
+        Geometry arrowX = new Geometry("arrowX", new Arrow(new Vector3f(arrowSize, 0, 0)));
+        arrowX.setMaterial(redMat);
+        Geometry arrowY = new Geometry("arrowY", new Arrow(new Vector3f(0, arrowSize, 0)));
+        arrowY.setMaterial(greenMat);
+        Geometry arrowZ = new Geometry("arrowZ", new Arrow(new Vector3f(0, 0, arrowSize)));
+        arrowZ.setMaterial(blueMat);
+        axis.attachChild(arrowX);
+        axis.attachChild(arrowY);
+        axis.attachChild(arrowZ);
+        return axis;
     }
 }

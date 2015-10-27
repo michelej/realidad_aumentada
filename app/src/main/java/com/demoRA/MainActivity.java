@@ -1,26 +1,15 @@
 package com.demoRA;
 
-import android.content.pm.ActivityInfo;
-import android.graphics.Color;
-import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.View;
-import android.view.ViewGroup;
 import android.view.WindowManager;
-import android.widget.CheckBox;
-import android.widget.Switch;
-
 import com.demoRA.utils.MathLib;
 import com.jme3.app.AndroidHarness;
-import com.jme3.system.android.AndroidConfigChooser;
-import com.qualcomm.vuforia.CameraCalibration;
 import com.qualcomm.vuforia.CameraDevice;
 import com.qualcomm.vuforia.DataSet;
 import com.qualcomm.vuforia.Frame;
 import com.qualcomm.vuforia.Image;
 import com.qualcomm.vuforia.ObjectTracker;
-import com.qualcomm.vuforia.Matrix34F;
 import com.qualcomm.vuforia.Matrix44F;
 import com.qualcomm.vuforia.PIXEL_FORMAT;
 import com.qualcomm.vuforia.Renderer;
@@ -31,9 +20,6 @@ import com.qualcomm.vuforia.Trackable;
 import com.qualcomm.vuforia.TrackableResult;
 import com.qualcomm.vuforia.Tracker;
 import com.qualcomm.vuforia.TrackerManager;
-import com.qualcomm.vuforia.Vec2F;
-import com.qualcomm.vuforia.VideoBackgroundConfig;
-
 import java.util.ArrayList;
 import java.util.logging.Level;
 
@@ -42,7 +28,7 @@ import java.util.logging.Level;
  */
 public class MainActivity extends AndroidHarness implements ApplicationControl{
 
-    private static final String LOGTAG = "MainActivity";
+    private static final String LOGTAG = "demoRA_LOG";
 
     ApplicationSession vuforiaAppSession;
 
@@ -50,12 +36,11 @@ public class MainActivity extends AndroidHarness implements ApplicationControl{
     private int mCurrentDatasetSelectionIndex = 0;
     private ArrayList<String> mDatasetStrings = new ArrayList<String>();
 
-    private boolean mExtendedTracking = true;
+    private boolean mExtendedTracking = false;
     private boolean mContAutofocus = false;
 
     public MainActivity() {
         appClass = "com.demoRA.MainJME"; // Set the application class to run
-        //eglConfigType = AndroidConfigChooser.ConfigType.BEST; // Try ConfigType.FASTEST; or ConfigType.LEGACY if you have problems
 
         eglBitsPerPixel = 24;
         eglAlphaBits = 0;
@@ -63,15 +48,15 @@ public class MainActivity extends AndroidHarness implements ApplicationControl{
         eglSamples = 0;
         eglStencilBits = 0;
 
-        exitDialogTitle = "Exit?";
-        exitDialogMessage = "Press Yes";
+        exitDialogTitle = "Salir?";
+        exitDialogMessage = "Presione Yes";
 
         splashPicID = R.drawable.splashscreen;
 
         mouseEventsInvertX = true; // Invert the MouseEvents X
         mouseEventsInvertY = true; // Invert the MouseEvents Y
 
-        logger.setLevel(Level.SEVERE);
+        logger.setLevel(Level.WARNING);
     }
 
     @Override
@@ -259,10 +244,11 @@ public class MainActivity extends AndroidHarness implements ApplicationControl{
 
             boolean result = CameraDevice.getInstance().setFocusMode(CameraDevice.FOCUS_MODE.FOCUS_MODE_CONTINUOUSAUTO);
 
-            if (result)
+            if (result) {
                 mContAutofocus = true;
-            else
+            }else {
                 Log.e(LOGTAG, "Unable to enable continuous autofocus");
+            }
         } else{
             Log.e(LOGTAG, exception.getString());
             finish();
@@ -286,22 +272,25 @@ public class MainActivity extends AndroidHarness implements ApplicationControl{
         }
     }
 
+    /**
+     *
+     */
     public void updateTracking() {
         if (this.getJmeApplication() != null) {
             State state = Renderer.getInstance().begin();
 
+            if(vuforiaAppSession.mCameraRunning) {
+                ((MainJME) getJmeApplication()).startUp();
+            }
+
             if (state.getNumTrackableResults() > 0) {
+                ((MainJME) this.getJmeApplication()).showObjects();
                 //Log.d(LOGTAG, "Results Found..");
 
                 for (int tIdx = 0; tIdx < state.getNumTrackableResults(); tIdx++) {
                     TrackableResult result = state.getTrackableResult(tIdx);
-                    Trackable trackable = result.getTrackable();
-                    //printUserData(trackable);
 
-                    Matrix34F res = result.getPose();
-                    float[] dt = res.getData();
                     Matrix44F modelViewMatrix = Tool.convertPose2GLMatrix(result.getPose());
-
                     Matrix44F inverseMV = MathLib.Matrix44FInverse(modelViewMatrix);
                     Matrix44F invTranspMV = MathLib.Matrix44FTranspose(inverseMV);
 
@@ -321,55 +310,16 @@ public class MainActivity extends AndroidHarness implements ApplicationControl{
                     float cam_dir_y = invTranspMV.getData()[9];
                     float cam_dir_z = invTranspMV.getData()[10];
 
-                    //get perspective transformation
-                    float nearPlane = 1.0f;
-                    float farPlane = 1000.0f;
-
-                    CameraCalibration cameraCalibration = CameraDevice.getInstance().getCameraCalibration();
-                    VideoBackgroundConfig config = Renderer.getInstance().getVideoBackgroundConfig();
-
-
-                    float viewportWidth = config.getSize().getData()[0];
-                    float viewportHeight = config.getSize().getData()[1];
-
-                    Vec2F size = cameraCalibration.getSize();
-                    Vec2F focalLength = cameraCalibration.getFocalLength();
-
-                    float fovRadians = (float) (2 * Math.atan(0.5f * (size.getData()[1] / focalLength.getData()[1])));
-                    float fovDegrees = (float) (fovRadians * 180.0f / Math.PI);
-                    float aspectRatio = (size.getData()[0] / size.getData()[1]);
-
-                    //adjust for screen vs camera size distorsion
-                    float viewportDistort = 1.0f;
-
-                    /*if (viewportWidth != mScreenWidth) {
-                        viewportDistort = viewportWidth / (float) mScreenWidth;
-                        fovDegrees = fovDegrees * viewportDistort;
-                        aspectRatio = aspectRatio / viewportDistort;
-                    }
-
-                    if (viewportHeight != mScreenHeight) {
-                        viewportDistort = viewportHeight / (float) mScreenHeight;
-                        fovDegrees = fovDegrees / viewportDistort;
-                        aspectRatio = aspectRatio * viewportDistort;
-                    }*/
-
-                    //((com.demoAR.DemoARJME) this.getJmeApplication()).setCameraPerspective(fovDegrees,aspectRatio);
-                    //((com.demoAR.DemoARJME) this.getJmeApplication()).setCameraViewport(viewportWidth,viewportHeight,cameraCalibration.getSize().getData()[0],cameraCalibration.getSize().getData()[1]);
                     ((MainJME) this.getJmeApplication()).setCameraPose(cam_x, cam_y, cam_z);
                     ((MainJME) this.getJmeApplication()).setCameraOrientation(cam_right_x, cam_right_y, cam_right_z, cam_up_x, cam_up_y, cam_up_z, cam_dir_x, cam_dir_y, cam_dir_z);
-
                 }
-
             } else {
                 //Log.d(LOGTAG, "No results found!");
-                ((MainJME) this.getJmeApplication()).lookAway();
+                ((MainJME) this.getJmeApplication()).hideObjects();
             }
-
 
             Renderer.getInstance().end();
         }
-
     }
 
     boolean isExtendedTrackingActive()

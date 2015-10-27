@@ -1,13 +1,9 @@
 package com.demoRA;
 
 import android.app.Activity;
-import android.content.pm.ActivityInfo;
-import android.content.res.Configuration;
 import android.os.AsyncTask;
-import android.os.Build;
 import android.util.DisplayMetrics;
 import android.util.Log;
-import android.view.WindowManager;
 
 import com.qualcomm.vuforia.CameraCalibration;
 import com.qualcomm.vuforia.CameraDevice;
@@ -27,7 +23,7 @@ public class ApplicationSession implements UpdateCallbackInterface {
 
     private String licenceKey="AZDs21P/////AAAAAUsb1JiDyk0Ht8mNYYYu/eNIS2d1DxATo+gmTOaM7gjgWD4G/1mUMw37vmQUaoMmg2KZg+s+kP49otaMVP5Do45hzOTVQWw7MALVpOnXpA7VMw6q/sQNxByJuMrBSHUONmBBB5iz6tAMbrvj1BPoJKh6Y2+FjpqjngSbSnHVD3CorEWj+mprejbwrMf4RBwkHswuWil0CAL6DmpxRkYlu2/IkPGElFSetorw6SD/gnpZqDXl8em5KsiRd65/OYN7Ljdd+raQpJOZYGpCBRYu/VhyudHmY+HNebFc3eFiuyoMm+Ega3qIjDRApYXDEXibvrGRrjqlo1WZm8SqBF9WYbzUDf2zQ8s2FzbopgMtpgI4";
 
-    private static final String LOGTAG = "ApplicationSession";
+    private static final String LOGTAG = "demoRA_LOG";
 
     // Reference to the current activity
     private Activity mActivity;
@@ -35,7 +31,7 @@ public class ApplicationSession implements UpdateCallbackInterface {
 
     // Flags
     private boolean mStarted = false;
-    private boolean mCameraRunning = false;
+    public boolean mCameraRunning = false;
 
     // Display size of the device:
     private int mScreenWidth = 0;
