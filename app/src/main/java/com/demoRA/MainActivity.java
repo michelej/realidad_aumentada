@@ -9,6 +9,7 @@ import com.qualcomm.vuforia.CameraDevice;
 import com.qualcomm.vuforia.DataSet;
 import com.qualcomm.vuforia.Frame;
 import com.qualcomm.vuforia.Image;
+import com.qualcomm.vuforia.ImageTarget;
 import com.qualcomm.vuforia.ObjectTracker;
 import com.qualcomm.vuforia.Matrix44F;
 import com.qualcomm.vuforia.PIXEL_FORMAT;
@@ -20,6 +21,9 @@ import com.qualcomm.vuforia.Trackable;
 import com.qualcomm.vuforia.TrackableResult;
 import com.qualcomm.vuforia.Tracker;
 import com.qualcomm.vuforia.TrackerManager;
+import com.qualcomm.vuforia.Vec2F;
+import com.qualcomm.vuforia.Vec3F;
+
 import java.util.ArrayList;
 import java.util.logging.Level;
 
@@ -289,6 +293,13 @@ public class MainActivity extends AndroidHarness implements ApplicationControl{
 
                 for (int tIdx = 0; tIdx < state.getNumTrackableResults(); tIdx++) {
                     TrackableResult result = state.getTrackableResult(tIdx);
+
+                    ImageTarget trackable = (ImageTarget)result.getTrackable();
+                    Vec3F size=trackable.getSize();
+                    float sizes[]=size.getData();
+                    // x , y , z
+                    //Log.d(LOGTAG, "SIZE TRACKABLE  v1 ("+sizes[0]+") v2 ("+sizes[1]+") v3 ("+sizes[2]+")");
+                    ((MainJME) this.getJmeApplication()).createTargetOver(sizes[0],sizes[1]);
 
                     Matrix44F modelViewMatrix = Tool.convertPose2GLMatrix(result.getPose());
                     Matrix44F inverseMV = MathLib.Matrix44FInverse(modelViewMatrix);

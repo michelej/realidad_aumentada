@@ -9,6 +9,7 @@ import com.jme3.material.Material;
 import com.jme3.math.ColorRGBA;
 import com.jme3.math.FastMath;
 import com.jme3.math.Quaternion;
+import com.jme3.math.Vector2f;
 import com.jme3.math.Vector3f;
 import com.jme3.renderer.Camera;
 import com.jme3.renderer.RenderManager;
@@ -60,6 +61,7 @@ public class MainJME extends SimpleApplication {
     private MainActivity activity;
 
     public boolean started=false;
+    public boolean targetOver=false;
 
     @Override
     public void simpleInitApp() {
@@ -326,7 +328,7 @@ public class MainJME extends SimpleApplication {
      * @param arrowSize
      * @return
      */
-    protected Node createAxisMarker(float arrowSize) {
+    private Node createAxisMarker(float arrowSize) {
         Material redMat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
         redMat.getAdditionalRenderState().setWireframe(true);
         redMat.setColor("Color", ColorRGBA.Red);
@@ -353,4 +355,22 @@ public class MainJME extends SimpleApplication {
         axis.attachChild(arrowZ);
         return axis;
     }
+
+    public void createTargetOver(float x,float y){
+        if(!targetOver) {
+            Material mat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
+            mat.setColor("Color", ColorRGBA.White);
+            Node node = new Node();
+            Quad quad = new Quad(x, y, true);
+            Geometry geom = new Geometry("targetOver", quad);
+            geom.setLocalTranslation(-x/2, -y/2, 0);
+            geom.setMaterial(mat);
+            node.attachChild(geom);
+
+            objNode.attachChild(node);
+            targetOver=true;
+        }
+    }
+
+
 }
