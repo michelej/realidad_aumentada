@@ -293,13 +293,15 @@ public class MainActivity extends AndroidHarness implements ApplicationControl{
 
                 for (int tIdx = 0; tIdx < state.getNumTrackableResults(); tIdx++) {
                     TrackableResult result = state.getTrackableResult(tIdx);
-
                     ImageTarget trackable = (ImageTarget)result.getTrackable();
+
+                    //Log.d(LOGTAG, "Unique ID: "+trackable.getUniqueTargetId());// UNIQUE ID
+
                     Vec3F size=trackable.getSize();
                     float sizes[]=size.getData();
                     // x , y , z
                     //Log.d(LOGTAG, "SIZE TRACKABLE  v1 ("+sizes[0]+") v2 ("+sizes[1]+") v3 ("+sizes[2]+")");
-                    ((MainJME) this.getJmeApplication()).createTargetOver(sizes[0],sizes[1]);
+                    ((MainJME) this.getJmeApplication()).showDebug(sizes[0],sizes[1]);
 
                     Matrix44F modelViewMatrix = Tool.convertPose2GLMatrix(result.getPose());
                     Matrix44F inverseMV = MathLib.Matrix44FInverse(modelViewMatrix);

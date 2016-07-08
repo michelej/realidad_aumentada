@@ -4,12 +4,10 @@ package com.demoRA;
 import android.util.Log;
 import com.jme3.app.SimpleApplication;
 import com.jme3.asset.TextureKey;
-import com.jme3.light.DirectionalLight;
 import com.jme3.material.Material;
 import com.jme3.math.ColorRGBA;
 import com.jme3.math.FastMath;
 import com.jme3.math.Quaternion;
-import com.jme3.math.Vector2f;
 import com.jme3.math.Vector3f;
 import com.jme3.renderer.Camera;
 import com.jme3.renderer.RenderManager;
@@ -18,9 +16,8 @@ import com.jme3.scene.Geometry;
 import com.jme3.scene.Node;
 import com.jme3.scene.Spatial;
 import com.jme3.scene.debug.Arrow;
-import com.jme3.scene.shape.Box;
+import com.jme3.scene.debug.Grid;
 import com.jme3.scene.shape.Quad;
-import com.jme3.system.AppSettings;
 import com.jme3.texture.Image;
 import com.jme3.texture.Texture;
 import com.jme3.texture.Texture2D;
@@ -61,7 +58,13 @@ public class MainJME extends SimpleApplication {
     private MainActivity activity;
 
     public boolean started=false;
-    public boolean targetOver=false;
+
+
+    // DEBUG -
+    public boolean debug = false;
+    //
+
+    public boolean shownDebugGrid =false;
 
     @Override
     public void simpleInitApp() {
@@ -156,8 +159,8 @@ public class MainJME extends SimpleApplication {
      *  Iniciar la escena que se sobre pone a la camara
      */
     public void initForegroundScene() {
-        /*Spatial logo = assetManager.loadModel("Models/logo/unetLogo.mesh.j3o");
-        logo.scale(100f, 100f, 100f);
+        Spatial logo = assetManager.loadModel("Models/logo/unetLogo.mesh.j3o");
+        logo.scale(140f, 140f, 140f);
         Material cube1Mat = new Material(assetManager,"Common/MatDefs/Misc/Unshaded.j3md");
         Texture cube1Tex = assetManager.loadTexture(new TextureKey("Models/logo/unetlogoCompleteMap.tga", false));
         cube1Mat.setTexture("ColorMap", cube1Tex);
@@ -175,9 +178,7 @@ public class MainJME extends SimpleApplication {
         Quaternion YAW180   = new Quaternion().fromAngleAxis(FastMath.PI  ,   new Vector3f(0,1,0));
         logo.rotate(YAW180);
 
-        objNode.attachChild(logo);*/
-
-        objNode.attachChild(createAxisMarker(300));
+        objNode.attachChild(logo);
     }
 
     /**
@@ -323,52 +324,56 @@ public class MainJME extends SimpleApplication {
         objNode.setCullHint(Spatial.CullHint.Dynamic);
     }
 
-    /**
-     *  Funcion Debug para crear un Axis X,Y,Y
-     * @param arrowSize
-     * @return
-     */
-    private Node createAxisMarker(float arrowSize) {
-        Material redMat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
-        redMat.getAdditionalRenderState().setWireframe(true);
-        redMat.setColor("Color", ColorRGBA.Red);
 
-        Material greenMat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
-        greenMat.getAdditionalRenderState().setWireframe(true);
-        greenMat.setColor("Color", ColorRGBA.Green);
+    public void showDebug(float width, float height) {
+        if(debug){
+            if(!shownDebugGrid) {
+                Log.d(LOGTAG, "showDebug - width: "+width+" - height: "+height);
+                Node node = new Node("DebugOBJ");
 
-        Material blueMat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
-        blueMat.getAdditionalRenderState().setWireframe(true);
-        blueMat.setColor("Color", ColorRGBA.Blue);
+                float squareSize=10f;
+                int w = (int) (width/squareSize);
+                int h = (int) (height/squareSize);
 
-        Node axis = new Node();
+                Geometry g = new Geometry("WireframeGrid", new Grid(w, h, squareSize));
+                Material mat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
+                mat.getAdditionalRenderState().setWireframe(true);
+                mat.setColor("Color", ColorRGBA.LightGray);
+                g.setMaterial(mat);
+                Quaternion PITCH090 = new Quaternion().fromAngleAxis(FastMath.PI/2,   new Vector3f(1,0,0));
+                g.rotate(PITCH090);
+                g.center().move(new Vector3f(0, 0, 0));
+                node.attachChild(g);
 
-        // create arrows
-        Geometry arrowX = new Geometry("arrowX", new Arrow(new Vector3f(arrowSize, 0, 0)));
-        arrowX.setMaterial(redMat);
-        Geometry arrowY = new Geometry("arrowY", new Arrow(new Vector3f(0, arrowSize, 0)));
-        arrowY.setMaterial(greenMat);
-        Geometry arrowZ = new Geometry("arrowZ", new Arrow(new Vector3f(0, 0, arrowSize)));
-        arrowZ.setMaterial(blueMat);
-        axis.attachChild(arrowX);
-        axis.attachChild(arrowY);
-        axis.attachChild(arrowZ);
-        return axis;
-    }
+                Material redMat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
+                redMat.getAdditionalRenderState().setWireframe(true);
+                redMat.setColor("Color", ColorRGBA.Red);
 
-    public void createTargetOver(float x,float y){
-        if(!targetOver) {
-            Material mat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
-            mat.setColor("Color", ColorRGBA.White);
-            Node node = new Node();
-            Quad quad = new Quad(x, y, true);
-            Geometry geom = new Geometry("targetOver", quad);
-            geom.setLocalTranslation(-x/2, -y/2, 0);
-            geom.setMaterial(mat);
-            node.attachChild(geom);
+                Material greenMat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
+                greenMat.getAdditionalRenderState().setWireframe(true);
+                greenMat.setColor("Color", ColorRGBA.Green);
 
-            objNode.attachChild(node);
-            targetOver=true;
+                Material blueMat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
+                blueMat.getAdditionalRenderState().setWireframe(true);
+                blueMat.setColor("Color", ColorRGBA.Blue);
+
+                Node axis = new Node("DebugAxis");
+
+                Geometry arrowX = new Geometry("arrowX", new Arrow(new Vector3f((w*squareSize)/2, 0, 0)));
+                arrowX.setMaterial(redMat);
+                Geometry arrowY = new Geometry("arrowY", new Arrow(new Vector3f(0, (h*squareSize)/2, 0)));
+                arrowY.setMaterial(greenMat);
+                Geometry arrowZ = new Geometry("arrowZ", new Arrow(new Vector3f(0, 0, (w*squareSize)/2)));
+                arrowZ.setMaterial(blueMat);
+                axis.attachChild(arrowX);
+                axis.attachChild(arrowY);
+                axis.attachChild(arrowZ);
+
+                node.attachChild(axis);
+
+                objNode.attachChild(node);
+                shownDebugGrid =true;
+            }
         }
     }
 
